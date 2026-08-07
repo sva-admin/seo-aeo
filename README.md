@@ -1,3 +1,5 @@
+<p align="center"><a href="https://loop.sv-academy.org"><img src="https://loop.sv-academy.org/apple-icon.png" width="88" alt="Silicon Valley Academy"/></a></p>
+
 # seo-aeo
 
 A 9-phase, approval-gated SEO and AEO build for Next.js static sites that adds per-page metadata, JSON-LD, llms.txt, dynamic OG images, a tuned sitemap, and an AI-crawler allowlist.
