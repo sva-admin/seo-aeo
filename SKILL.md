@@ -4,7 +4,7 @@ description: "Comprehensive SEO + AEO (AI Engine Optimization) build for Next.js
 trigger: /seo-aeo
 ---
 
-# /seo-aeo — Comprehensive SEO + AEO Build
+# /seo-aeo: Comprehensive SEO + AEO Build
 
 A 9-phase, approval-gated workflow that ships every modern SEO + AEO best practice for a Next.js static-export site: per-page metadata, JSON-LD entity graph, llms.txt for AI engines, dynamic OG images, tuned sitemap, AI-crawler allowlist, and an operational runbook.
 
@@ -57,10 +57,10 @@ deployment-runbook.md               # operational reference for site admin
 
 Skip if:
 - The site is server-rendered with dynamic content (most of this assumes `output: 'export'`; adapt the rest)
-- The site is e-commerce with thousands of product pages (different shape — needs Product schema, Offer schema, dynamic sitemaps)
-- The user only needs ONE artifact (e.g., just an OG image) — invoke just that phase
+- The site is e-commerce with thousands of product pages (different shape, needs Product schema, Offer schema, dynamic sitemaps)
+- The user only needs ONE artifact (e.g., just an OG image), invoke just that phase
 
-## Hard rules — never break these
+## Hard rules: never break these
 
 These are the rules that made the source build production-grade rather than slop. Violating any of these will get the model in trouble.
 
@@ -131,7 +131,7 @@ Report:
 
 ---
 
-## Phase 1 — Per-page metadata
+## Phase 1: Per-page metadata
 
 **Goal:** Every user-facing page emits unique `title`, `description`, canonical, hreflang, openGraph, twitter, robots.
 
@@ -190,8 +190,8 @@ export const metadata: Metadata = {
 
 **Key decisions:**
 
-- Use `title.absolute` if the layout has a title template that appends brand chars — gives full SEO control per page.
-- For funnel/transitional pages (e.g., a /newsletter that redirects users), set `robots: { index: false, follow: true }` — don't pollute the index with thin content.
+- Use `title.absolute` if the layout has a title template that appends brand chars, gives full SEO control per page.
+- For funnel/transitional pages (e.g., a /newsletter that redirects users), set `robots: { index: false, follow: true }`, don't pollute the index with thin content.
 - For sites with CSS-only language toggle (one URL serves both languages), hreflang declares every language pointing at the same URL. Suboptimal vs separate `/en/` and `/th/` URL trees but matches the architecture.
 
 **Trailing-slash gotcha:** If `next.config.js` has `trailingSlash: true`, all canonical URLs MUST end with `/`. If `false`, no trailing slash. Mismatch causes "soft canonical" warnings in Google Search Console.
@@ -208,7 +208,7 @@ grep -oE 'rel="canonical"[^>]+' out/about/index.html
 
 ---
 
-## Phase 2 — Site-wide JSON-LD
+## Phase 2: Site-wide JSON-LD
 
 **Goal:** Every page emits `Organization` (or `EducationalOrganization` / `LocalBusiness` if applicable) + `WebSite` schemas with `@id` cross-references.
 
@@ -322,7 +322,7 @@ while ((m = rx.exec(html))) {
     const obj = JSON.parse(raw);
     console.log(`Block ${i}: VALID @type=${obj["@type"]} @id=${obj["@id"]}`);
   } catch (e) {
-    console.log(`Block ${i}: INVALID — ${e.message}`);
+    console.log(`Block ${i}: INVALID, ${e.message}`);
   }
 }
 '
@@ -330,13 +330,13 @@ while ((m = rx.exec(html))) {
 
 ---
 
-## Phase 3 — Per-page JSON-LD
+## Phase 3: Per-page JSON-LD
 
 **Goal:** Add page-specific schemas that complement the site-wide ones from Phase 2.
 
 Three sub-phases depending on what pages exist:
 
-### 3.1 — FAQPage on `/faq`
+### 3.1: FAQPage on `/faq`
 
 For sites with an FAQ page. Extract every Q&A pair verbatim from the rendered accordion content.
 
@@ -379,18 +379,18 @@ export default function FaqPage() {
 }
 ```
 
-**Apostrophe note:** Most pages use curly apostrophes (`'`, U+2019) for typography. Preserve them in schema text — that's verbatim. JS single-quoted strings handle curly apostrophes natively (they're just text, not delimiters).
+**Apostrophe note:** Most pages use curly apostrophes (`'`, U+2019) for typography. Preserve them in schema text, that's verbatim. JS single-quoted strings handle curly apostrophes natively (they're just text, not delimiters).
 
-### 3.2 — LocalBusiness on multi-location pages
+### 3.2: LocalBusiness on multi-location pages
 
-For each physical location (campus, office, branch), add a `LocalBusiness` + `EducationalOrganization` combined schema. The `@id` MUST match the `subOrganization` entry's `@id` from Phase 2 — that's what makes Google merge the two into one entity.
+For each physical location (campus, office, branch), add a `LocalBusiness` + `EducationalOrganization` combined schema. The `@id` MUST match the `subOrganization` entry's `@id` from Phase 2, that's what makes Google merge the two into one entity.
 
 **Template:**
 
 ```tsx
 const campusSchema = {
   '@context': 'https://schema.org',
-  '@type': ['LocalBusiness', 'EducationalOrganization'],   // array — appears in BOTH verticals
+  '@type': ['LocalBusiness', 'EducationalOrganization'],   // array, appears in BOTH verticals
   '@id': 'https://<DOMAIN>/<path>/#organization',          // MATCHES the subOrg @id
   name: '<Location name>',
   url: 'https://<DOMAIN>/<path>/',
@@ -406,17 +406,17 @@ const campusSchema = {
   telephone: '+<E.164>',
   email: '<contact email>',
   parentOrganization: { '@id': 'https://<DOMAIN>/#organization' },  // back-link to root
-  // SKIP if not in source data — don't invent:
+  // SKIP if not in source data, don't invent:
   // geo: { '@type': 'GeoCoordinates', latitude: ..., longitude: ... }
   // openingHoursSpecification: [...]
 };
 ```
 
-**Skip-with-flag pattern:** If `geo` coordinates aren't in your data files, SKIP the field and add a TODO.md flag. Same for opening hours. Don't invent lat/lng — Google can correlate the address to a location on its own, just slower.
+**Skip-with-flag pattern:** If `geo` coordinates aren't in your data files, SKIP the field and add a TODO.md flag. Same for opening hours. Don't invent lat/lng, Google can correlate the address to a location on its own, just slower.
 
-### 3.3 — Organization with mainEntityOfPage on /about
+### 3.3: Organization with mainEntityOfPage on /about
 
-A thin schema that re-uses the root Organization `@id` but adds `mainEntityOfPage` pointing at `/about/`. Tells Google "this URL is the canonical description of this entity" — boosts Knowledge Panel attribution.
+A thin schema that re-uses the root Organization `@id` but adds `mainEntityOfPage` pointing at `/about/`. Tells Google "this URL is the canonical description of this entity", boosts Knowledge Panel attribution.
 
 **Template:**
 
@@ -434,7 +434,7 @@ const aboutSchema = {
 };
 ```
 
-NO redundant declaration of logo/sameAs/subOrgs here — those are already established by layout.tsx via the shared `@id`. The only NEW signal is `mainEntityOfPage`.
+NO redundant declaration of logo/sameAs/subOrgs here, those are already established by layout.tsx via the shared `@id`. The only NEW signal is `mainEntityOfPage`.
 
 **Verification (all of Phase 3):**
 
@@ -453,11 +453,11 @@ console.log(`Total JSON-LD blocks on /faq: ${i}`);
 
 ---
 
-## Phase 4 — AEO files
+## Phase 4: AEO files
 
 **Goal:** Three files that make the site machine-readable to AI engines:
 
-### 4.1 — `public/llms.txt` (~600 words)
+### 4.1: `public/llms.txt` (~600 words)
 
 Concise structured knowledge document. Markdown format. AI engines pull this and summarize verbatim, so every sentence must be factually grounded.
 
@@ -473,7 +473,7 @@ Concise structured knowledge document. Markdown format. AI engines pull this and
 
 <2-3 sentence intro pulled from /about page>
 
-## <Section name — e.g. Campuses, Locations, Products>
+## <Section name: e.g. Campuses, Locations, Products>
 
 ### <Item 1 name>
 <Tagline>. <Location/key facts>. Contact: <phone>, <email>.
@@ -485,8 +485,8 @@ Concise structured knowledge document. Markdown format. AI engines pull this and
 
 <2-3 sentence overview from existing page>
 
-- **<Program 1>** — <one-line description>
-- **<Program 2>** — <one-line description>
+- **<Program 1>**, <one-line description>
+- **<Program 2>**, <one-line description>
 
 ## Admissions / Contact / How to Get Started
 
@@ -506,14 +506,14 @@ Concise structured knowledge document. Markdown format. AI engines pull this and
 
 **Source provenance:** For every claim in the file, document the source line/file in your approval message. The skill's golden rule is "no invention."
 
-### 4.2 — `public/llms-full.txt` (~2000-4000 words)
+### 4.2: `public/llms-full.txt` (~2000-4000 words)
 
 Long-form companion. Pulls full content from /about, /academics (or /products, /services), /faq, /campuses. Strip HTML. Keep prose.
 
 Structure:
 
 ```markdown
-# <Brand> — Full Knowledge Document
+# <Brand>: Full Knowledge Document
 
 <Same overview block as llms.txt>
 
@@ -542,7 +542,7 @@ Structure:
 
 Bilingual content: include English only. AI engines infer cultural context from English mentions; duplicating bilingual content bloats the file.
 
-### 4.3 — `public/robots.txt` with AI crawler allowlist
+### 4.3: `public/robots.txt` with AI crawler allowlist
 
 If using `next-sitemap`, generate via the config (one source of truth). Otherwise edit `public/robots.txt` directly.
 
@@ -568,7 +568,7 @@ robotsTxtOptions: {
 **Static `public/robots.txt`:**
 
 ```
-# AI engines — explicit allow
+# AI engines: explicit allow
 User-agent: GPTBot
 Allow: /
 
@@ -605,22 +605,22 @@ Sitemap: https://<DOMAIN>/sitemap.xml
 
 **Why each bot matters:**
 
-- **GPTBot** — OpenAI's web crawler that feeds ChatGPT.
-- **ClaudeBot / anthropic-ai** — Anthropic crawlers for Claude.
-- **Google-Extended** — Google's Bard/Gemini training crawler (distinct from regular Googlebot).
-- **PerplexityBot** — Perplexity's live search crawler.
-- **Applebot-Extended** — Apple Intelligence training.
-- **CCBot** — Common Crawl, feeds many AI models including Anthropic and OpenAI training data.
-- **Bytespider** — ByteDance (TikTok / Doubao search).
-- **Amazonbot** — Amazon's emerging search products.
+- **GPTBot**, OpenAI's web crawler that feeds ChatGPT.
+- **ClaudeBot / anthropic-ai**, Anthropic crawlers for Claude.
+- **Google-Extended**, Google's Bard/Gemini training crawler (distinct from regular Googlebot).
+- **PerplexityBot**, Perplexity's live search crawler.
+- **Applebot-Extended**, Apple Intelligence training.
+- **CCBot**, Common Crawl, feeds many AI models including Anthropic and OpenAI training data.
+- **Bytespider**, ByteDance (TikTok / Doubao search).
+- **Amazonbot**, Amazon's emerging search products.
 
 These crawlers default to disallow on many sites that haven't explicitly allowed them. Explicit allowlist signals "we want to be discoverable to AI search."
 
 ---
 
-## Phase 5 — Image SEO + dynamic OG image
+## Phase 5: Image SEO + dynamic OG image
 
-### 5.1 — Image alt text audit
+### 5.1: Image alt text audit
 
 Audit every `<Image>` (next/image) and `<img>` in `src/`. For each:
 
@@ -639,9 +639,9 @@ Common patterns:
 | Gallery thumbnail in linked card | `alt=""` if card link has aria-label |
 | Lightbox/modal full image | `alt="<descriptive>"` |
 
-**WP-imported HTML alt cleanup** (if migrating from WordPress): WP-imported `<img>` tags often have Facebook photo IDs or filename junk in alt attributes (`alt="105491093_3643628198..."`). Screen readers read these aloud — worse than empty. Bulk-replace with `alt=""` for decorative or descriptive text for content.
+**WP-imported HTML alt cleanup** (if migrating from WordPress): WP-imported `<img>` tags often have Facebook photo IDs or filename junk in alt attributes (`alt="105491093_3643628198..."`). Screen readers read these aloud, worse than empty. Bulk-replace with `alt=""` for decorative or descriptive text for content.
 
-### 5.2 — Dynamic OG image at `src/app/opengraph-image.tsx`
+### 5.2: Dynamic OG image at `src/app/opengraph-image.tsx`
 
 1200×630 brand-aware PNG generated at build time. Next.js auto-attaches to `og:image` and `twitter:image` meta tags.
 
@@ -658,7 +658,7 @@ export const alt = '<Brand> · <Tagline>';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-// Load Google Font as TTF. Satori requires TTF/OTF — woff2 NOT supported.
+// Load Google Font as TTF. Satori requires TTF/OTF, woff2 NOT supported.
 // Old User-Agent forces Google Fonts API to return TTF instead of woff2.
 async function loadGoogleFont(
   family: string,
@@ -749,7 +749,7 @@ export default async function OGImage() {
 }
 ```
 
-### 5.3 — `vercel.json` Content-Type header (CRITICAL)
+### 5.3: `vercel.json` Content-Type header (CRITICAL)
 
 The OG image is emitted as `out/opengraph-image` (NO `.png` extension). Vercel serves extensionless files as `application/octet-stream` by default, which breaks OG crawlers. Add a header rule:
 
@@ -774,7 +774,7 @@ The OG image is emitted as `out/opengraph-image` (NO `.png` extension). Vercel s
 }
 ```
 
-**TWO RULES REQUIRED** — one for no-trailing-slash, one for trailing-slash. With `trailingSlash: true` Next.js serves the image at `/opengraph-image/`. Without both rules, the Content-Type only applies to one variant. Vercel's path-to-regexp doesn't honor `{/,}` optional-group syntax — must be explicit.
+**TWO RULES REQUIRED**, one for no-trailing-slash, one for trailing-slash. With `trailingSlash: true` Next.js serves the image at `/opengraph-image/`. Without both rules, the Content-Type only applies to one variant. Vercel's path-to-regexp doesn't honor `{/,}` optional-group syntax, must be explicit.
 
 The 1-year immutable cache is safe because Next.js appends a content-hash query string (`?abc123`) to the OG image URL in meta tags. When the image content changes, the hash changes, the URL changes, the cache busts automatically.
 
@@ -791,7 +791,7 @@ curl -s https://<DOMAIN>/opengraph-image/ -o /tmp/og.png && file /tmp/og.png
 
 ---
 
-## Phase 6 — Sitemap tuning
+## Phase 6: Sitemap tuning
 
 **Goal:** Sitemap contains only indexable URLs, with sensible priority/changefreq.
 
@@ -851,7 +851,7 @@ module.exports = {
 };
 ```
 
-**Priority/changefreq guidelines (Google treats these as weak signals — still helpful for crawl budget):**
+**Priority/changefreq guidelines (Google treats these as weak signals, still helpful for crawl budget):**
 
 | Route type | Priority | Changefreq |
 |---|---|---|
@@ -883,11 +883,11 @@ for url in re.findall(r"<url>(.*?)</url>", xml):
 
 ---
 
-## Phase 7 — Search Console preparation
+## Phase 7: Search Console preparation
 
 **Goal:** Set up the placeholder + runbook so the school/business owner can do GSC verification later without you.
 
-1. Create `public/google-site-verification.html` as a placeholder. Just a comment block with instructions — the actual `googleXYZ.html` file gets dropped in by the owner after running GSC.
+1. Create `public/google-site-verification.html` as a placeholder. Just a comment block with instructions, the actual `googleXYZ.html` file gets dropped in by the owner after running GSC.
 
 2. Add a "Google Search Console Setup" section to `deployment-runbook.md`:
 
@@ -908,7 +908,7 @@ for url in re.findall(r"<url>(.*?)</url>", xml):
 
 **Bing Webmaster Tools (feeds ChatGPT + Copilot):**
 1. https://www.bing.com/webmasters
-2. "Import from Google Search Console" — one click
+2. "Import from Google Search Console", one click
 ```
 
 3. Add a "Rich Results Test" section:
@@ -927,7 +927,7 @@ After deploy:
 
 ---
 
-## Phase 8 — Operational runbook
+## Phase 8: Operational runbook
 
 **Goal:** A `deployment-runbook.md` that lets a non-technical admin operate the site after you're gone.
 
@@ -935,14 +935,14 @@ After deploy:
 
 1. **Google Search Console Setup** (from Phase 7)
 2. **Bing Webmaster Tools Setup** (from Phase 7)
-3. **AI Search Optimization Status** — list the files (llms.txt etc.) and where to verify
+3. **AI Search Optimization Status**, list the files (llms.txt etc.) and where to verify
 4. **Rich Results Test** (from Phase 7)
-5. **Vercel Deployment** — repo, team, project, deploy flow, rollback procedure
-6. **DNS Configuration** — full record table (A, CNAME, TXT, MX), where to manage, dig verification commands
-7. **Email Configuration** — Workspace admin console, SPF/DKIM/DMARC status, DMARC report handling
-8. **Google Business Profile per location** — setup checklist with all known fields populated
-9. **PDPA / GDPR Compliance Notes** — current "no tracking" state + what would require legal review
-10. **Quarterly SEO Maintenance** — 30-min checklist (GSC health, llms.txt update, structured-data validation, Vercel analytics, DNS health, TODO.md review)
+5. **Vercel Deployment**, repo, team, project, deploy flow, rollback procedure
+6. **DNS Configuration**, full record table (A, CNAME, TXT, MX), where to manage, dig verification commands
+7. **Email Configuration**, Workspace admin console, SPF/DKIM/DMARC status, DMARC report handling
+8. **Google Business Profile per location**, setup checklist with all known fields populated
+9. **PDPA / GDPR Compliance Notes**, current "no tracking" state + what would require legal review
+10. **Quarterly SEO Maintenance**, 30-min checklist (GSC health, llms.txt update, structured-data validation, Vercel analytics, DNS health, TODO.md review)
 
 **Key principle for the runbook:** Self-sufficient. No assumed context. Someone who is not the original builder should be able to follow it cold and not break anything. Include exact URLs, exact buttons to click, exact commands to run.
 
@@ -953,7 +953,7 @@ After deploy:
 
 ---
 
-## Phase 9 — Commit + push + production verify
+## Phase 9: Commit + push + production verify
 
 **Goal:** Single consolidated commit for the whole pass, push, deploy verification.
 
@@ -980,31 +980,31 @@ Site-wide metadata, structured data, AI engine discoverability,
 and operational documentation. No URL changes, no tracking added,
 all facts sourced from existing content.
 
-Phase 1 — Per-page metadata: metadataBase, all pages get unique
+Phase 1, Per-page metadata: metadataBase, all pages get unique
 titles/descriptions/canonicals/hreflang/openGraph/twitter, noindex
 on funnel/error pages
 
-Phase 2 — Site-wide JSON-LD: Organization + WebSite schemas in
+Phase 2, Site-wide JSON-LD: Organization + WebSite schemas in
 layout, @id cross-references
 
-Phase 3 — Per-page JSON-LD: FAQPage (verbatim Q&As), LocalBusiness
+Phase 3, Per-page JSON-LD: FAQPage (verbatim Q&As), LocalBusiness
 per location with parentOrganization refs, mainEntityOfPage on /about
 
-Phase 4 — AEO files: llms.txt, llms-full.txt, robots.txt with AI
+Phase 4, AEO files: llms.txt, llms-full.txt, robots.txt with AI
 crawler allowlist (GPTBot, ClaudeBot, anthropic-ai, Google-Extended,
 PerplexityBot, Applebot-Extended, CCBot, Bytespider, Amazonbot)
 
-Phase 5 — Image SEO + dynamic OG image: alt text fixes, 1200x630
+Phase 5, Image SEO + dynamic OG image: alt text fixes, 1200x630
 brand-aware PNG via next/og, vercel.json Content-Type for the
 extensionless static file
 
-Phase 6 — Sitemap tuning: per-route priority/changefreq via
+Phase 6, Sitemap tuning: per-route priority/changefreq via
 transform, exclusions for noindex pages and non-HTML routes
 
-Phase 7 — Search Console preparation: google-site-verification
+Phase 7, Search Console preparation: google-site-verification
 placeholder, deployment-runbook GSC + Bing sections
 
-Phase 8 — Operational runbook: Vercel, DNS, email, GBP, PDPA,
+Phase 8, Operational runbook: Vercel, DNS, email, GBP, PDPA,
 quarterly maintenance
 ```
 
@@ -1038,7 +1038,7 @@ curl -s https://<DOMAIN>/ | grep -c 'application/ld+json'
 
 ---
 
-## Pitfalls library — things that will bite you
+## Pitfalls library: things that will bite you
 
 Real bugs from real production builds. Worth memorizing.
 
@@ -1046,7 +1046,7 @@ Real bugs from real production builds. Worth memorizing.
 
 **Symptom:** Your `vercel.json` header rule on `/opengraph-image` doesn't apply. Production serves `application/octet-stream`.
 
-**Cause:** With `trailingSlash: true`, Next.js serves the image at `/opengraph-image/` (with slash). Vercel's `source` match is literal — `/opengraph-image` ≠ `/opengraph-image/`.
+**Cause:** With `trailingSlash: true`, Next.js serves the image at `/opengraph-image/` (with slash). Vercel's `source` match is literal, `/opengraph-image` ≠ `/opengraph-image/`.
 
 **Fix:** Use TWO explicit header rules, one for each variant. The `{/,}` optional-group syntax does NOT work in Vercel's path-to-regexp version. Don't trust it.
 
@@ -1092,7 +1092,7 @@ title: { absolute: 'Full 50-60 char title' }
 
 **Symptom:** Google Search Console flags "Content doesn't match" for FAQPage.
 
-**Cause:** Schema text differs from rendered text — even small differences (curly vs straight apostrophe, missing punctuation, paraphrased).
+**Cause:** Schema text differs from rendered text, even small differences (curly vs straight apostrophe, missing punctuation, paraphrased).
 
 **Fix:** Verbatim-match. If the rendered answer has bullet lists, flatten to plain text for the schema but keep all the actual words.
 
@@ -1118,7 +1118,7 @@ title: { absolute: 'Full 50-60 char title' }
 
 **Cause:** Edge runtime has stricter fetch limits than Node.
 
-**Fix:** Use `runtime: 'nodejs'` for OG image generation (also required for static export — see above).
+**Fix:** Use `runtime: 'nodejs'` for OG image generation (also required for static export, see above).
 
 ---
 
@@ -1129,11 +1129,11 @@ This skill assumes Next.js 14+ App Router with `output: 'export'` on Vercel. Ada
 ### Next.js Pages Router
 
 - Metadata via `next/head` instead of `export const metadata`.
-- No `app/opengraph-image.tsx` — use `next-og-image` or a script that generates a static PNG at build time.
+- No `app/opengraph-image.tsx`, use `next-og-image` or a script that generates a static PNG at build time.
 
 ### Next.js SSR (no `output: 'export'`)
 
-- OG image can use `runtime: 'edge'` — works at request time.
+- OG image can use `runtime: 'edge'`, works at request time.
 - Sitemap can use `getStaticPaths` to enumerate dynamic routes.
 
 ### Other static-site generators (Astro, Eleventy, Hugo)
@@ -1146,7 +1146,7 @@ This skill assumes Next.js 14+ App Router with `output: 'export'` on Vercel. Ada
 
 ### WordPress / CMS-rendered sites
 
-- This skill is the wrong shape — WP has Yoast or RankMath plugins that cover SEO. AEO files would be uploaded manually to the WP file manager.
+- This skill is the wrong shape, WP has Yoast or RankMath plugins that cover SEO. AEO files would be uploaded manually to the WP file manager.
 
 ---
 
@@ -1167,7 +1167,7 @@ The skill is self-contained in this single file. No dependencies, no scripts, no
 
 ## Customizing this skill for your brand / domain
 
-This skill is generic — written for any Next.js site. To pre-tune it for a specific organization (school, agency, SaaS, etc.):
+This skill is generic, written for any Next.js site. To pre-tune it for a specific organization (school, agency, SaaS, etc.):
 
 1. Update the brand color examples in Phase 5 to your actual hex values
 2. Replace `<DOMAIN>` placeholders in templates with your domain

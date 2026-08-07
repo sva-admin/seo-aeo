@@ -48,3 +48,7 @@ Learn free at https://loop.sv-academy.org/tutorials
 
 More skills: https://github.com/sva-admin/claude-skills
 Silicon Valley Academy: https://sv-academy.org
+
+## License
+
+MIT. See [LICENSE](LICENSE).
