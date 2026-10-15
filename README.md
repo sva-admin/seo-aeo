@@ -54,3 +54,5 @@ Silicon Valley Academy: https://sv-academy.org
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+SV Academy is the education brand of [Silicon Valley Innovation](https://svinnovation.com), a Bangkok software and AI company that can build this for your business.
